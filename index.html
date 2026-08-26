@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>학습노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4f2ec;
+    --paper-line:#d7d2c4;
+    --ink:#2b2a26;
+    --ink-soft:#6b6a62;
+    --accent:#4b5d52;
+    --accent-soft:#9fae9f;
+    --card:#fbfaf6;
+    --shadow: 0 1px 2px rgba(43,42,38,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background: var(--paper);
+    background-image: linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 34px;
+    background-position: 0 96px;
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{ max-width: 880px; margin: 0 auto; min-height:100vh; display:flex; flex-direction:column; padding: 0 28px 40px; }
+  header.page-head{
+    padding-top: 30px; padding-bottom: 14px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom: 1px solid var(--paper-line); margin-bottom: 6px;
+  }
+  header.page-head h1{ font-family:'Nanum Myeongjo', serif; font-weight:800; font-size: 26px; letter-spacing:-0.01em; margin:0; }
+  header.page-head .meta{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft); }
+
+  .entry-form{ margin-top: 28px; display:flex; gap:10px; }
+  .entry-form input{
+    flex:1; border:none; border-bottom: 1.5px solid var(--ink); background:transparent;
+    font-family:'Noto Sans KR', sans-serif; font-size:16px; padding: 6px 2px; color: var(--ink); outline:none;
+  }
+  .entry-form input::placeholder{ color: var(--ink-soft); }
+  .entry-form button{
+    border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+    font-family:'Noto Sans KR', sans-serif; font-size:13px; padding: 0 18px; cursor:pointer; letter-spacing:0.02em;
+  }
+  .entry-form button:hover{ opacity:0.85; }
+
+  .search-hint{ font-size:11px; color:var(--ink-soft); margin-top:6px; font-family:'JetBrains Mono', monospace; min-height: 14px; }
+
+  .results{ margin-top: 10px; }
+  .results .result-row{
+    display:flex; align-items:baseline; gap:14px; padding: 9px 4px; cursor:pointer; border-bottom: 1px dashed var(--paper-line);
+  }
+  .results .result-row:hover{ background: rgba(75,93,82,0.06); }
+  .result-row .idx{ font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--accent-soft); width: 20px; flex-shrink:0; }
+  .result-row .word{ font-weight:500; font-size:15px; flex:1; }
+  .result-row .meaning{ font-size:12.5px; color: var(--ink-soft); font-style:italic; }
+
+  .notes-list{ list-style:none; padding:0; margin: 18px 0 0; flex:1; }
+  .notes-list li{ display:flex; align-items:center; gap:12px; padding: 8px 4px; border-bottom: 1px solid var(--paper-line); font-size:14.5px; }
+  .notes-list li .bullet{ width:16px; height:16px; flex-shrink:0; border-radius:50%; border:1.5px solid var(--ink-soft); cursor:pointer; position:relative; }
+  .notes-list li.active .bullet{ border-color:var(--accent); background:var(--accent); }
+  .notes-list li .word-col{ flex:1; cursor:pointer; }
+  .notes-list li .word-col .w{ font-weight:500; }
+  .notes-list li .word-col .m{ font-size:12px; color:var(--ink-soft); margin-left:8px;}
+  .notes-list li .remove{ font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--ink-soft); cursor:pointer; opacity:0; }
+  .notes-list li:hover .remove{ opacity:1; }
+  .notes-list li.active{ color:var(--accent); }
+  .notes-list .empty{ color:var(--ink-soft); font-size:13px; padding: 20px 4px; text-align:center; border-bottom:none; }
+
+  .progress-block{ margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--paper-line); }
+  .progress-label{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-soft); display:flex; justify-content:space-between; margin-bottom:6px; }
+  input[type=range]{ -webkit-appearance:none; width:100%; height:2px; background: var(--paper-line); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; height:11px; border-radius:50%; background: var(--accent); cursor:pointer; margin-top:-4.5px; }
+  input[type=range]::-moz-range-thumb{ width:11px; height:11px; border:none; border-radius:50%; background: var(--accent); cursor:pointer; }
+  input[type=range]::-webkit-slider-runnable-track{ height:2px; background:var(--paper-line); }
+
+  .nav-row{ margin-top: 16px; display:flex; align-items:center; justify-content:center; gap: 22px; }
+  .nav-row button{ background:none; border:none; font-family:'Noto Sans KR', sans-serif; color: var(--ink-soft); font-size:13px; cursor:pointer; letter-spacing:0.02em; }
+  .nav-row button:hover{ color:var(--ink); }
+  .nav-row #playPauseBtn{
+    width:34px; height:34px; border-radius:50%; border:1.5px solid var(--ink); color:var(--ink);
+    font-size:12px; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .nav-row #playPauseBtn:hover{ background:var(--ink); color:var(--paper); }
+
+  .footer-note{ margin-top:26px; font-size:11px; color:var(--paper-line); text-align:center; user-select:none; }
+
+  .sync-dot{ position:fixed; right:16px; bottom:14px; width:7px; height:7px; border-radius:50%; background: var(--paper-line); cursor:pointer; }
+  .sync-dot.linked{ background: var(--accent-soft); }
+  .sync-dot:hover{ background:var(--accent-soft); }
+
+  .modal-overlay{ position:fixed; inset:0; background: rgba(43,42,38,0.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal-overlay.hidden{ display:none; }
+  .modal-box{ background:var(--card); border:1px solid var(--paper-line); padding: 22px 24px; width: 300px; box-shadow: var(--shadow); }
+  .modal-box p{ margin:0 0 12px; font-size:13px; color:var(--ink-soft); }
+  .modal-box .row{ display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
+  .modal-box button{ border:1px solid var(--ink); background:transparent; padding: 6px 14px; font-size:12px; cursor:pointer; color:var(--ink); }
+  .modal-box button.primary{ background:var(--ink); color:var(--paper); }
+  .modal-box .status{ font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--accent); min-height:14px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="page-head">
+    <h1>학습노트</h1>
+    <div class="meta" id="dateLabel"></div>
+  </header>
+
+  <div class="entry-form">
+    <input id="wordInput" type="text" placeholder="오늘의 단어를 입력하세요" autocomplete="off" />
+    <button id="addBtn">추가</button>
+  </div>
+  <div class="search-hint" id="searchHint"></div>
+
+  <div class="results" id="results"></div>
+
+  <ul class="notes-list" id="notesList">
+    <li class="empty">아직 추가한 단어가 없습니다.</li>
+  </ul>
+
+  <div class="progress-block">
+    <div class="progress-label">
+      <span id="curTime">00:00</span>
+      <span id="curWordLabel">-</span>
+      <span id="totalTime">00:00</span>
+    </div>
+    <input type="range" id="progressBar" min="0" max="1000" value="0" />
+  </div>
+
+  <div class="nav-row">
+    <button id="prevBtn">이전 문제</button>
+    <button id="playPauseBtn">▶</button>
+    <button id="nextBtn">다음 문제</button>
+  </div>
+
+  <div class="footer-note">학습노트 v1.0</div>
+</div>
+
+<div class="sync-dot" id="syncDot" title=""></div>
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal-box">
+    <p id="modalText">동기화되지 않았습니다.</p>
+    <div class="status" id="modalStatus"></div>
+    <div class="row">
+      <button id="closeModalBtn">닫기</button>
+      <button id="syncBtn" class="primary">동기화 시작</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<script>
+(function(){
+  // ---------- 상태 (메모리에만 저장, localStorage 미사용) ----------
+  let accessToken = null;
+  let refreshToken = null;
+  let tokenExpiresAt = 0;
+  let deviceId = null;
+  let player = null;
+  let sdkReady = false;
+
+  let queue = [];        // { uri, title, artist }
+  let currentIndex = -1;
+  let progressTimer = null;
+  let seeking = false;
+  let localPaused = true;
+  let localPosition = 0;
+  let localDuration = 0;
+
+  const $ = (id) => document.getElementById(id);
+
+  (function setDate(){
+    const d = new Date();
+    const w = ['일','월','화','수','목','금','토'][d.getDay()];
+    $('dateLabel').textContent = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${w})`;
+  })();
+
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec||0));
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  // ---------- URL 해시에서 토큰 회수 ----------
+  (function consumeHash(){
+    if(location.hash && location.hash.length > 1){
+      const params = new URLSearchParams(location.hash.slice(1));
+      if(params.get('at')){
+        accessToken = params.get('at');
+        refreshToken = params.get('rt') || null;
+        const expIn = parseInt(params.get('exp') || '3600', 10);
+        tokenExpiresAt = Date.now() + expIn * 1000;
+        history.replaceState(null, '', location.pathname);
+        updateSyncDot();
+        initSpotifySdk();
+        scheduleRefresh();
+      }
+    }
+    const q = new URLSearchParams(location.search);
+    if(q.get('sync_error')){
+      history.replaceState(null, '', location.pathname);
+    }
+  })();
+
+  function updateSyncDot(){
+    $('syncDot').classList.toggle('linked', !!accessToken);
+    $('modalText').textContent = accessToken ? '동기화되었습니다.' : '동기화되지 않았습니다.';
+  }
+
+  function scheduleRefresh(){
+    const msUntilRefresh = Math.max(10000, tokenExpiresAt - Date.now() - 60000);
+    setTimeout(doRefresh, msUntilRefresh);
+  }
+
+  async function doRefresh(){
+    if(!refreshToken) return;
+    try{
+      const res = await fetch(`/api/refresh?refresh_token=${encodeURIComponent(refreshToken)}`);
+      const data = await res.json();
+      if(data.access_token){
+        accessToken = data.access_token;
+        if(data.refresh_token) refreshToken = data.refresh_token;
+        tokenExpiresAt = Date.now() + (data.expires_in || 3600) * 1000;
+        scheduleRefresh();
+      }
+    }catch(e){ /* 다음 시도까지 대기 */ }
+  }
+
+  // ---------- Spotify Web Playback SDK ----------
+  window.onSpotifyWebPlaybackSDKReady = () => { sdkReady = true; if(accessToken) initSpotifySdk(); };
+
+  function initSpotifySdk(){
+    if(!sdkReady || player) return;
+    player = new Spotify.Player({
+      name: '학습노트',
+      getOAuthToken: cb => cb(accessToken),
+      volume: 0.8
+    });
+
+    player.addListener('ready', ({ device_id }) => { deviceId = device_id; });
+    player.addListener('not_ready', () => { deviceId = null; });
+    player.addListener('player_state_changed', (state) => {
+      if(!state) return;
+      localPaused = state.paused;
+      localPosition = state.position;
+      localDuration = state.duration;
+      $('playPauseBtn').textContent = localPaused ? '▶' : '❚❚';
+      if(state.paused === false) startProgressTimer(); else stopProgressTimer();
+      if(state.paused && state.position === 0 && state.duration > 0 && localDuration - state.position < 400){
+        // 트랙 종료 감지 (근사치)
+      }
+    });
+    player.addListener('initialization_error', () => { $('searchHint').textContent = '재생 초기화에 실패했습니다.'; });
+    player.addListener('authentication_error', () => { $('searchHint').textContent = '인증이 만료되었습니다. 다시 동기화해주세요.'; accessToken=null; updateSyncDot(); });
+    player.addListener('account_error', () => { $('searchHint').textContent = 'Premium 계정이 필요합니다.'; });
+
+    player.connect();
+  }
+
+  function startProgressTimer(){
+    stopProgressTimer();
+    const startedAt = Date.now();
+    const basePos = localPosition;
+    progressTimer = setInterval(() => {
+      if(seeking) return;
+      const cur = basePos + (Date.now() - startedAt);
+      $('curTime').textContent = fmtTime(cur/1000);
+      $('totalTime').textContent = fmtTime(localDuration/1000);
+      if(localDuration > 0){
+        $('progressBar').value = Math.floor((cur/localDuration)*1000);
+        if(cur >= localDuration - 300){ goNext(); }
+      }
+    }, 500);
+  }
+  function stopProgressTimer(){ if(progressTimer) clearInterval(progressTimer); }
+
+  $('progressBar').addEventListener('input', () => { seeking = true; });
+  $('progressBar').addEventListener('change', () => {
+    if(player && localDuration > 0){
+      const target = (parseInt($('progressBar').value,10)/1000) * localDuration;
+      player.seek(target);
+    }
+    seeking = false;
+  });
+
+  // ---------- 검색 (Spotify Web API) ----------
+  async function search(query){
+    const hint = $('searchHint');
+    $('results').innerHTML = '';
+    if(!accessToken){
+      hint.textContent = '검색을 사용하려면 동기화가 필요합니다 (우측 하단 점).';
+      return;
+    }
+    hint.textContent = '찾는 중...';
+    try{
+      const res = await fetch(`https://api.spotify.com/v1/search?type=track&limit=6&q=${encodeURIComponent(query)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if(res.status === 401){
+        hint.textContent = '인증이 만료되었습니다. 다시 동기화해주세요.';
+        accessToken = null; updateSyncDot();
+        return;
+      }
+      const data = await res.json();
+      const items = ((data.tracks && data.tracks.items) || []).map(t => ({
+        uri: t.uri,
+        title: t.name,
+        artist: t.artists.map(a => a.name).join(', ')
+      }));
+      hint.textContent = items.length ? '' : '결과가 없습니다.';
+      renderResults(items);
+    }catch(e){
+      hint.textContent = '네트워크 오류가 발생했습니다.';
+    }
+  }
+
+  function renderResults(items){
+    const box = $('results');
+    box.innerHTML = '';
+    items.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = `<span class="idx">${String(i+1).padStart(2,'0')}</span>
+        <span class="word">${escapeHtml(item.title)}</span>
+        <span class="meaning">${escapeHtml(item.artist)}</span>`;
+      row.addEventListener('click', () => {
+        addToQueue(item);
+        $('results').innerHTML = '';
+        $('wordInput').value = '';
+        $('searchHint').textContent = '';
+      });
+      box.appendChild(row);
+    });
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- 큐(플레이리스트) ----------
+  function addToQueue(item){
+    queue.push(item);
+    renderQueue();
+    if(currentIndex === -1) playIndex(queue.length - 1);
+  }
+
+  function removeFromQueue(i){
+    queue.splice(i,1);
+    if(currentIndex === i){
+      currentIndex = -1;
+      if(player) player.pause();
+      $('curWordLabel').textContent = '-';
+      $('playPauseBtn').textContent = '▶';
+    } else if(currentIndex > i){
+      currentIndex -= 1;
+    }
+    renderQueue();
+  }
+
+  function renderQueue(){
+    const list = $('notesList');
+    list.innerHTML = '';
+    if(queue.length === 0){
+      list.innerHTML = '<li class="empty">아직 추가한 단어가 없습니다.</li>';
+      return;
+    }
+    queue.forEach((item, i) => {
+      const li = document.createElement('li');
+      if(i === currentIndex) li.classList.add('active');
+      li.innerHTML = `<span class="bullet"></span>
+        <span class="word-col"><span class="w">${escapeHtml(item.title)}</span><span class="m">${escapeHtml(item.artist)}</span></span>
+        <span class="remove">지우기</span>`;
+      li.querySelector('.bullet').addEventListener('click', () => playIndex(i));
+      li.querySelector('.word-col').addEventListener('click', () => playIndex(i));
+      li.querySelector('.remove').addEventListener('click', (e) => { e.stopPropagation(); removeFromQueue(i); });
+      list.appendChild(li);
+    });
+  }
+
+  async function playIndex(i){
+    if(i < 0 || i >= queue.length) return;
+    if(!deviceId){
+      $('searchHint').textContent = '재생 준비 중입니다. 잠시 후 다시 시도해주세요.';
+      setTimeout(() => playIndex(i), 800);
+      return;
+    }
+    currentIndex = i;
+    const item = queue[i];
+    $('curWordLabel').textContent = item.title.length > 26 ? item.title.slice(0,26)+'…' : item.title;
+    renderQueue();
+    try{
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ uris: [item.uri] })
+      });
+    }catch(e){
+      $('searchHint').textContent = '재생 요청에 실패했습니다.';
+    }
+  }
+
+  function goNext(){ if(queue.length) playIndex((currentIndex + 1) % queue.length); }
+  function goPrev(){ if(queue.length) playIndex((currentIndex - 1 + queue.length) % queue.length); }
+
+  $('nextBtn').addEventListener('click', goNext);
+  $('prevBtn').addEventListener('click', goPrev);
+  $('playPauseBtn').addEventListener('click', () => {
+    if(!player || currentIndex === -1) return;
+    if(localPaused) player.resume(); else player.pause();
+  });
+
+  // ---------- 입력 ----------
+  $('addBtn').addEventListener('click', () => { const v = $('wordInput').value.trim(); if(v) search(v); });
+  $('wordInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ const v = $('wordInput').value.trim(); if(v) search(v); }
+  });
+
+  // ---------- 동기화 모달 ----------
+  $('syncDot').addEventListener('click', () => { updateSyncDot(); $('modalOverlay').classList.remove('hidden'); });
+  $('closeModalBtn').addEventListener('click', () => $('modalOverlay').classList.add('hidden'));
+  $('syncBtn').addEventListener('click', () => { window.location.href = '/api/login'; });
+
+  updateSyncDot();
+})();
+</script>
+
+</body>
+</html>

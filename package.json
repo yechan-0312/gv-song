@@ -1,0 +1,9 @@
+{
+  "name": "study-notebook-spotify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "겉보기엔 학습노트, 실제로는 Spotify 연동 음악 플레이어",
+  "engines": {
+    "node": ">=18"
+  }
+}
