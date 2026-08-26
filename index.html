@@ -84,10 +84,10 @@
   .nav-row button{ background:none; border:none; font-family:'Noto Sans KR', sans-serif; color: var(--ink-soft); font-size:13px; cursor:pointer; letter-spacing:0.02em; }
   .nav-row button:hover{ color:var(--ink); }
   .nav-row #playPauseBtn{
-    width:34px; height:34px; border-radius:50%; border:1.5px solid var(--ink); color:var(--ink);
-    font-size:12px; display:flex; align-items:center; justify-content:center; padding:0;
+    border:none; background:none; color:var(--ink-soft); font-size:13px; letter-spacing:0.02em;
+    padding: 0 4px; min-width: 56px;
   }
-  .nav-row #playPauseBtn:hover{ background:var(--ink); color:var(--paper); }
+  .nav-row #playPauseBtn:hover{ color:var(--ink); }
 
   .footer-note{ margin-top:26px; font-size:11px; color:var(--paper-line); text-align:center; user-select:none; }
 
@@ -136,7 +136,7 @@
 
   <div class="nav-row">
     <button id="prevBtn">이전 문제</button>
-    <button id="playPauseBtn">▶</button>
+    <button id="playPauseBtn">이어보기</button>
     <button id="nextBtn">다음 문제</button>
   </div>
 
@@ -158,7 +158,6 @@
 <script src="https://sdk.scdn.co/spotify-player.js"></script>
 <script>
 (function(){
-  // ---------- 상태 (메모리에만 저장, localStorage 미사용) ----------
   let accessToken = null;
   let refreshToken = null;
   let tokenExpiresAt = 0;
@@ -166,7 +165,7 @@
   let player = null;
   let sdkReady = false;
 
-  let queue = [];        // { uri, title, artist }
+  let queue = [];
   let currentIndex = -1;
   let progressTimer = null;
   let seeking = false;
@@ -189,26 +188,42 @@
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
-  // ---------- URL 해시에서 토큰 회수 ----------
-  (function consumeHash(){
+  // ---------- URL 해시에서 토큰 회수 (로그인 직후 리다이렉트 시) ----------
+  function consumeHash(){
     if(location.hash && location.hash.length > 1){
       const params = new URLSearchParams(location.hash.slice(1));
       if(params.get('at')){
         accessToken = params.get('at');
-        refreshToken = params.get('rt') || null;
         const expIn = parseInt(params.get('exp') || '3600', 10);
         tokenExpiresAt = Date.now() + expIn * 1000;
         history.replaceState(null, '', location.pathname);
         updateSyncDot();
         initSpotifySdk();
         scheduleRefresh();
+        return true;
       }
     }
     const q = new URLSearchParams(location.search);
     if(q.get('sync_error')){
       history.replaceState(null, '', location.pathname);
     }
-  })();
+    return false;
+  }
+
+  // ---------- 서버 세션으로 조용히 로그인 복원 (새로고침 대응) ----------
+  async function restoreSession(){
+    try{
+      const res = await fetch('/api/session', { credentials: 'same-origin' });
+      const data = await res.json();
+      if(data && data.authenticated){
+        accessToken = data.access_token;
+        tokenExpiresAt = Date.now() + (data.expires_in || 3600) * 1000;
+        updateSyncDot();
+        initSpotifySdk();
+        scheduleRefresh();
+      }
+    }catch(e){ /* 세션 없음 - 계속 진행 */ }
+  }
 
   function updateSyncDot(){
     $('syncDot').classList.toggle('linked', !!accessToken);
@@ -221,17 +236,23 @@
   }
 
   async function doRefresh(){
-    if(!refreshToken) return;
     try{
-      const res = await fetch(`/api/refresh?refresh_token=${encodeURIComponent(refreshToken)}`);
+      const res = await fetch('/api/session', { credentials: 'same-origin' });
       const data = await res.json();
-      if(data.access_token){
+      if(data && data.authenticated){
         accessToken = data.access_token;
-        if(data.refresh_token) refreshToken = data.refresh_token;
         tokenExpiresAt = Date.now() + (data.expires_in || 3600) * 1000;
         scheduleRefresh();
+      } else {
+        accessToken = null;
+        updateSyncDot();
       }
     }catch(e){ /* 다음 시도까지 대기 */ }
+  }
+
+  // 페이지 로드시: 해시에 토큰 있으면 그걸 쓰고, 없으면 서버 세션으로 조용히 복원 시도
+  if(!consumeHash()){
+    restoreSession();
   }
 
   // ---------- Spotify Web Playback SDK ----------
@@ -252,14 +273,11 @@
       localPaused = state.paused;
       localPosition = state.position;
       localDuration = state.duration;
-      $('playPauseBtn').textContent = localPaused ? '▶' : '❚❚';
+      $('playPauseBtn').textContent = localPaused ? '이어보기' : '잠시멈춤';
       if(state.paused === false) startProgressTimer(); else stopProgressTimer();
-      if(state.paused && state.position === 0 && state.duration > 0 && localDuration - state.position < 400){
-        // 트랙 종료 감지 (근사치)
-      }
     });
-    player.addListener('initialization_error', () => { $('searchHint').textContent = '재생 초기화에 실패했습니다.'; });
-    player.addListener('authentication_error', () => { $('searchHint').textContent = '인증이 만료되었습니다. 다시 동기화해주세요.'; accessToken=null; updateSyncDot(); });
+    player.addListener('initialization_error', () => { $('searchHint').textContent = '준비에 실패했습니다.'; });
+    player.addListener('authentication_error', () => { $('searchHint').textContent = '다시 동기화해주세요.'; accessToken=null; updateSyncDot(); });
     player.addListener('account_error', () => { $('searchHint').textContent = 'Premium 계정이 필요합니다.'; });
 
     player.connect();
@@ -305,7 +323,7 @@
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       if(res.status === 401){
-        hint.textContent = '인증이 만료되었습니다. 다시 동기화해주세요.';
+        hint.textContent = '다시 동기화해주세요.';
         accessToken = null; updateSyncDot();
         return;
       }
@@ -360,7 +378,7 @@
       currentIndex = -1;
       if(player) player.pause();
       $('curWordLabel').textContent = '-';
-      $('playPauseBtn').textContent = '▶';
+      $('playPauseBtn').textContent = '이어보기';
     } else if(currentIndex > i){
       currentIndex -= 1;
     }
@@ -390,7 +408,7 @@
   async function playIndex(i){
     if(i < 0 || i >= queue.length) return;
     if(!deviceId){
-      $('searchHint').textContent = '재생 준비 중입니다. 잠시 후 다시 시도해주세요.';
+      $('searchHint').textContent = '준비 중입니다. 잠시 후 다시 시도해주세요.';
       setTimeout(() => playIndex(i), 800);
       return;
     }
@@ -408,7 +426,7 @@
         body: JSON.stringify({ uris: [item.uri] })
       });
     }catch(e){
-      $('searchHint').textContent = '재생 요청에 실패했습니다.';
+      $('searchHint').textContent = '요청에 실패했습니다.';
     }
   }
 
