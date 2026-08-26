@@ -35,10 +35,17 @@ module.exports = async (req, res) => {
       return res.end();
     }
 
-    // 토큰을 URL 해시(#)로 넘긴다 - 해시는 서버 로그에 남지 않는다.
+    // refresh_token은 httpOnly 쿠키에 저장 (다음 방문 때 /api/session 으로 자동 복원)
+    if (data.refresh_token) {
+      res.setHeader(
+        'Set-Cookie',
+        `sid=${encodeURIComponent(data.refresh_token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+      );
+    }
+
+    // access_token만 해시로 전달 (해시는 서버 로그에 남지 않음)
     const params = new URLSearchParams({
       at: data.access_token,
-      rt: data.refresh_token || '',
       exp: String(data.expires_in || 3600)
     });
 
