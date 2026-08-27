@@ -13,7 +13,9 @@ module.exports = (req, res) => {
     'user-read-email',
     'user-read-private',
     'user-modify-playback-state',
-    'user-read-playback-state'
+    'user-read-playback-state',
+    'playlist-read-private',
+    'playlist-read-collaborative'
   ].join(' ');
 
   const state = Math.random().toString(36).slice(2);
