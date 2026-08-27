@@ -156,6 +156,9 @@
     <div class="side-panel-inner">
       <h2>노트 모음집</h2>
       <div id="collectionsList"><div class="empty-note">저장된 모음집이 없습니다.</div></div>
+
+      <h2 style="margin-top:26px;">계정 재생목록</h2>
+      <div id="accountPlaylistsList"><div class="empty-note">불러오는 중...</div></div>
     </div>
   </div>
 </div>
@@ -421,9 +424,58 @@
     });
   }
 
+  async function fetchAccountPlaylists(){
+    const box = $('accountPlaylistsList');
+    if(!accessToken){ box.innerHTML = '<div class="empty-note">동기화가 필요합니다.</div>'; return; }
+    box.innerHTML = '<div class="empty-note">불러오는 중...</div>';
+    try{
+      const res = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if(res.status === 401){ box.innerHTML = '<div class="empty-note">다시 동기화가 필요합니다.</div>'; return; }
+      const data = await res.json();
+      const items = (data.items || []);
+      if(items.length === 0){ box.innerHTML = '<div class="empty-note">계정에 재생목록이 없습니다.</div>'; return; }
+      box.innerHTML = '';
+      items.forEach((pl) => {
+        const div = document.createElement('div'); div.className = 'collection-item';
+        div.innerHTML = `<span class="name">${escapeHtml(pl.name)}</span><span class="count">${pl.tracks.total}곡</span>`;
+        div.addEventListener('click', () => loadAccountPlaylist(pl.id));
+        box.appendChild(div);
+      });
+    }catch(e){
+      box.innerHTML = '<div class="empty-note">불러오지 못했습니다.</div>';
+    }
+  }
+
+  async function loadAccountPlaylist(playlistId){
+    $('searchHint').textContent = '재생목록을 불러오는 중...';
+    try{
+      let items = [];
+      let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+      while(url){
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if(res.status === 401){ $('searchHint').textContent = '다시 동기화해주세요.'; return; }
+        const data = await res.json();
+        (data.items || []).forEach(it => {
+          const t = it.track;
+          if(t && t.uri){ items.push({ uri: t.uri, title: t.name, artist: (t.artists||[]).map(a=>a.name).join(', ') }); }
+        });
+        url = data.next || null;
+      }
+      queue = items; currentIndex = -1; renderQueue();
+      $('searchHint').textContent = '';
+      if(queue.length) playIndex(0);
+      $('sidePanel').classList.remove('open');
+    }catch(e){
+      $('searchHint').textContent = '재생목록을 불러오지 못했습니다.';
+    }
+  }
+
   $('collectionsToggle').addEventListener('click', () => {
     $('sidePanel').classList.toggle('open');
     renderCollections();
+    fetchAccountPlaylists();
   });
 
   $('saveCollectionLink').addEventListener('click', () => {
