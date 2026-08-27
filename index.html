@@ -446,7 +446,7 @@
       box.innerHTML = '';
       items.forEach((pl) => {
         const div = document.createElement('div'); div.className = 'collection-item';
-        const total = (pl.tracks && typeof pl.tracks.total === 'number') ? `${pl.tracks.total}곡` : '';
+        const total = (pl.items && typeof pl.items.total === 'number') ? `${pl.items.total}곡` : '';
         div.innerHTML = `<span class="name">${escapeHtml(pl.name || '(제목없음)')}</span><span class="count">${total}</span>`;
         div.addEventListener('click', () => loadAccountPlaylist(pl.id));
         box.appendChild(div);
@@ -460,7 +460,7 @@
     $('searchHint').textContent = '재생목록을 불러오는 중...';
     try{
       let items = [];
-      let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+      let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100`;
       while(url){
         const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
         const data = await res.json();
@@ -469,7 +469,7 @@
           return;
         }
         (data.items || []).forEach(it => {
-          const t = it && it.track;
+          const t = it && it.item;
           if(t && t.uri && t.uri.startsWith('spotify:track:')){
             items.push({ uri: t.uri, title: t.name, artist: (t.artists||[]).map(a=>a.name).join(', ') });
           }
