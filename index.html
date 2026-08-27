@@ -3,182 +3,206 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>학습노트</title>
+<title>Spotify Lite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#f4f2ec; --paper-line:#d7d2c4; --ink:#2b2a26; --ink-soft:#6b6a62;
-    --accent:#4b5d52; --accent-soft:#9fae9f; --card:#fbfaf6; --shadow: 0 1px 2px rgba(43,42,38,0.06);
+    --bg:#000000; --panel:#121212; --panel-2:#181818; --border:#2a2a2a;
+    --text:#ffffff; --text-dim:#a7a7a7; --accent:#1db954; --accent-hover:#1ed760;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
-    margin:0; background: var(--paper);
-    background-image: linear-gradient(var(--paper-line) 1px, transparent 1px);
-    background-size: 100% 34px; background-position: 0 96px;
-    color:var(--ink); font-family:'Noto Sans KR', sans-serif; -webkit-font-smoothing:antialiased;
+    margin:0; background: var(--bg); color: var(--text);
+    font-family:'Inter', sans-serif; -webkit-font-smoothing:antialiased;
   }
-  .layout{ max-width: 1080px; margin:0 auto; display:flex; gap: 0; align-items:flex-start; }
-  .app{ flex:1; max-width: 880px; min-height:100vh; display:flex; flex-direction:column; padding: 0 28px 40px; }
+  .layout{ display:flex; height:100vh; }
 
-  header.page-head{
-    padding-top: 30px; padding-bottom: 14px; display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom: 1px solid var(--paper-line); margin-bottom: 6px;
+  /* 사이드바 */
+  .sidebar{ width: 280px; flex-shrink:0; background: var(--panel); padding: 20px 12px; display:flex; flex-direction:column; gap: 18px; overflow-y:auto; }
+  .brand{ display:flex; align-items:center; gap:10px; padding: 4px 12px 8px; }
+  .brand .logo{ width:28px; height:28px; border-radius:50%; background: var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:#000; }
+  .brand .name{ font-weight:800; font-size:16px; letter-spacing:-0.01em; }
+
+  .side-section{ background: var(--panel-2); border-radius: 8px; padding: 14px; }
+  .side-section h3{ font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color: var(--text-dim); margin: 0 0 10px 6px; }
+  .side-list{ display:flex; flex-direction:column; gap:1px; max-height: 240px; overflow-y:auto; }
+  .side-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding: 8px 6px; border-radius:4px; cursor:pointer; }
+  .side-item:hover{ background: rgba(255,255,255,0.06); }
+  .side-item .t{ font-size:13.5px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .side-item .n{ font-size:11px; color: var(--text-dim); flex-shrink:0; }
+  .side-item .del{ font-size:11px; color: var(--text-dim); opacity:0; flex-shrink:0; }
+  .side-item:hover .del{ opacity:1; }
+  .side-empty{ font-size:12.5px; color: var(--text-dim); padding: 6px; }
+  .save-current-btn{
+    margin-top:10px; width:100%; background:none; border:1px solid var(--border); color: var(--text);
+    border-radius: 20px; padding: 8px 0; font-size:12.5px; cursor:pointer; font-weight:600;
   }
-  header.page-head h1{ font-family:'Nanum Myeongjo', serif; font-weight:800; font-size: 26px; letter-spacing:-0.01em; margin:0; }
-  .head-right{ display:flex; align-items:center; gap:14px; }
-  .meta{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft); }
-  .collections-toggle{ font-size:12px; color:var(--ink-soft); cursor:pointer; border-bottom:1px dashed var(--ink-soft); }
-  .collections-toggle:hover{ color:var(--ink); }
+  .save-current-btn:hover{ border-color: var(--text); }
 
-  .entry-form{ margin-top: 28px; display:flex; gap:10px; }
-  .entry-form input{
-    flex:1; border:none; border-bottom: 1.5px solid var(--ink); background:transparent;
-    font-family:'Noto Sans KR', sans-serif; font-size:16px; padding: 6px 2px; color: var(--ink); outline:none;
+  .sync-status{ margin-top:auto; display:flex; align-items:center; gap:8px; padding: 10px 12px; border-top: 1px solid var(--border); cursor:pointer; }
+  .sync-status .dot{ width:8px; height:8px; border-radius:50%; background:#555; flex-shrink:0; }
+  .sync-status.linked .dot{ background: var(--accent); }
+  .sync-status .label{ font-size:12.5px; color: var(--text-dim); }
+
+  /* 메인 영역 */
+  .main{ flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .topbar{ padding: 18px 32px 0; }
+  .search-row{ display:flex; gap:10px; max-width:480px; }
+  .search-row input{
+    flex:1; background: var(--panel-2); border:1px solid var(--border); border-radius: 22px;
+    padding: 11px 16px; color: var(--text); font-size:14px; outline:none;
   }
-  .entry-form input::placeholder{ color: var(--ink-soft); }
-  .entry-form button{
-    border:1px solid var(--ink); background:var(--ink); color:var(--paper);
-    font-family:'Noto Sans KR', sans-serif; font-size:13px; padding: 0 18px; cursor:pointer; letter-spacing:0.02em;
+  .search-row input:focus{ border-color:#555; }
+  .search-row button{
+    background: var(--accent); color:#000; border:none; border-radius: 22px; padding: 0 20px;
+    font-weight:700; font-size:13px; cursor:pointer;
   }
-  .entry-form button:hover{ opacity:0.85; }
-  .search-hint{ font-size:11px; color:var(--ink-soft); margin-top:6px; font-family:'JetBrains Mono', monospace; min-height: 14px; }
+  .search-row button:hover{ background: var(--accent-hover); }
+  .search-hint{ font-size:12px; color: var(--text-dim); margin-top:8px; min-height:16px; }
 
-  .results{ margin-top: 10px; }
-  .results .result-row{ display:flex; align-items:baseline; gap:14px; padding: 9px 4px; cursor:pointer; border-bottom: 1px dashed var(--paper-line); }
-  .results .result-row:hover{ background: rgba(75,93,82,0.06); }
-  .result-row .idx{ font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--accent-soft); width: 20px; flex-shrink:0; }
-  .result-row .word{ font-weight:500; font-size:15px; flex:1; }
-  .result-row .meaning{ font-size:12.5px; color: var(--ink-soft); font-style:italic; }
+  .content{ flex:1; overflow-y:auto; padding: 20px 32px 0; }
+  .section-title{ font-size:20px; font-weight:800; margin: 6px 0 14px; }
 
-  .list-head-row{ display:flex; align-items:center; justify-content:space-between; margin-top:18px; }
-  .list-head-row .save-link{ font-size:12px; color:var(--ink-soft); cursor:pointer; border-bottom:1px dashed var(--ink-soft); }
-  .list-head-row .save-link:hover{ color:var(--ink); }
-
-  .notes-list{ list-style:none; padding:0; margin: 8px 0 0; flex:1; }
-  .notes-list li{ display:flex; align-items:center; gap:12px; padding: 8px 4px; border-bottom: 1px solid var(--paper-line); font-size:14.5px; }
-  .notes-list li .bullet{ width:16px; height:16px; flex-shrink:0; border-radius:50%; border:1.5px solid var(--ink-soft); cursor:pointer; }
-  .notes-list li.active .bullet{ border-color:var(--accent); background:var(--accent); }
-  .notes-list li .word-col{ flex:1; cursor:pointer; }
-  .notes-list li .word-col .w{ font-weight:500; }
-  .notes-list li .word-col .m{ font-size:12px; color:var(--ink-soft); margin-left:8px;}
-  .notes-list li .remove{ font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--ink-soft); cursor:pointer; opacity:0; }
-  .notes-list li:hover .remove{ opacity:1; }
-  .notes-list li.active{ color:var(--accent); }
-  .notes-list .empty{ color:var(--ink-soft); font-size:13px; padding: 20px 4px; text-align:center; border-bottom:none; }
-
-  .write-line-block{ margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--paper-line); }
-  .write-line{
-    font-family:'Nanum Myeongjo', serif; font-size:14.5px; line-height:1.7; letter-spacing:0.01em;
-    cursor:text; user-select:none; min-height: 26px; color: var(--ink);
+  .track-row{
+    display:grid; grid-template-columns: 28px 1fr auto; align-items:center; gap:14px;
+    padding: 9px 10px; border-radius:6px; cursor:pointer;
   }
-  .write-line .blank{ color: var(--paper-line); }
-  .write-line .caret{ display:inline-block; width:1px; background:var(--accent); animation: blink 1s step-start infinite; }
-  @keyframes blink{ 50%{ opacity:0; } }
+  .track-row:hover{ background: rgba(255,255,255,0.07); }
+  .track-row .idx{ color: var(--text-dim); font-size:13px; text-align:center; }
+  .track-row .titles{ overflow:hidden; }
+  .track-row .titles .tt{ font-size:14.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-row .titles .ar{ font-size:12.5px; color: var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-row .action{ font-size:12px; color: var(--text-dim); opacity:0; }
+  .track-row:hover .action{ opacity:1; }
+  .track-row.active .tt{ color: var(--accent); }
+  .track-row.active .idx{ color: var(--accent); }
 
-  .nav-row{ margin-top: 14px; display:flex; align-items:center; justify-content:center; gap: 22px; }
-  .nav-row button{ background:none; border:none; font-family:'Noto Sans KR', sans-serif; color: var(--ink-soft); font-size:13px; cursor:pointer; letter-spacing:0.02em; }
-  .nav-row button:hover{ color:var(--ink); }
-  .nav-row #playPauseBtn{ padding: 0 4px; min-width: 56px; }
+  .queue-empty{ color: var(--text-dim); font-size:13.5px; padding: 30px 10px; text-align:center; }
 
-  .footer-note{ margin-top:26px; font-size:11px; color:var(--paper-line); text-align:center; user-select:none; }
+  /* 하단 플레이어 바 */
+  .player-bar{
+    height: 90px; background: var(--panel); border-top: 1px solid var(--border);
+    display:flex; align-items:center; padding: 0 16px; gap: 24px; flex-shrink:0;
+  }
+  .now-playing{ width: 260px; display:flex; align-items:center; gap:12px; min-width:0; }
+  .now-playing .art{ width:52px; height:52px; border-radius:4px; background: linear-gradient(135deg, #1db954, #14532d); flex-shrink:0; }
+  .now-playing .meta{ min-width:0; }
+  .now-playing .meta .tt{ font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .now-playing .meta .ar{ font-size:12px; color: var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-  .sync-dot{ position:fixed; right:16px; bottom:14px; width:7px; height:7px; border-radius:50%; background: var(--paper-line); cursor:pointer; }
-  .sync-dot.linked{ background: var(--accent-soft); }
-  .sync-dot:hover{ background:var(--accent-soft); }
+  .player-center{ flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; max-width: 640px; margin: 0 auto; }
+  .transport{ display:flex; align-items:center; gap: 20px; }
+  .transport button{ background:none; border:none; color: var(--text-dim); cursor:pointer; font-size:15px; padding:0; }
+  .transport button:hover{ color: var(--text); }
+  .transport .play-btn{
+    width:32px; height:32px; border-radius:50%; background:#fff; color:#000; display:flex;
+    align-items:center; justify-content:center; font-size:13px;
+  }
+  .transport .play-btn:hover{ transform: scale(1.05); }
 
-  .modal-overlay{ position:fixed; inset:0; background: rgba(43,42,38,0.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .seek-row{ width:100%; display:flex; align-items:center; gap:10px; }
+  .seek-row span{ font-size:11px; color: var(--text-dim); font-variant-numeric: tabular-nums; width:34px; }
+  .seek-row span:last-child{ text-align:left; }
+  .seek-row input[type=range]{
+    -webkit-appearance:none; flex:1; height:4px; border-radius:2px; background: #4d4d4d; outline:none;
+  }
+  .seek-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:#fff; cursor:pointer; margin-top:-4px;
+  }
+
+  .modal-overlay{ position:fixed; inset:0; background: rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:50; }
   .modal-overlay.hidden{ display:none; }
-  .modal-box{ background:var(--card); border:1px solid var(--paper-line); padding: 22px 24px; width: 300px; box-shadow: var(--shadow); }
-  .modal-box p{ margin:0 0 12px; font-size:13px; color:var(--ink-soft); }
-  .modal-box .row{ display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
-  .modal-box button{ border:1px solid var(--ink); background:transparent; padding: 6px 14px; font-size:12px; cursor:pointer; color:var(--ink); }
-  .modal-box button.primary{ background:var(--ink); color:var(--paper); }
-  .modal-box .status{ font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--accent); min-height:14px; }
-  .modal-box input[type=text]{ width:100%; border:none; border-bottom:1.5px solid var(--ink); background:transparent; padding:6px 2px; font-size:14px; outline:none; margin-top:4px; }
-
-  .side-panel{ width: 0; overflow:hidden; transition: width 0.15s ease; border-left: 1px solid var(--paper-line); min-height:100vh; }
-  .side-panel.open{ width: 260px; }
-  .side-panel-inner{ width:260px; padding: 30px 20px; }
-  .side-panel h2{ font-family:'Nanum Myeongjo', serif; font-size:16px; margin:0 0 14px; }
-  .collection-item{ padding: 9px 4px; border-bottom: 1px dashed var(--paper-line); cursor:pointer; }
-  .collection-item:hover{ background: rgba(75,93,82,0.06); }
-  .collection-item .name{ font-size:13.5px; font-weight:500; }
-  .collection-item .count{ font-size:11px; color:var(--ink-soft); margin-left:6px; }
-  .collection-item .del{ float:right; font-size:11px; color:var(--ink-soft); opacity:0; }
-  .collection-item:hover .del{ opacity:1; }
-  .side-panel .empty-note{ font-size:12.5px; color:var(--ink-soft); }
+  .modal-box{ background: var(--panel-2); border:1px solid var(--border); border-radius:10px; padding: 26px; width: 320px; }
+  .modal-box p{ margin:0 0 14px; font-size:13.5px; color: var(--text-dim); }
+  .modal-box .row{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+  .modal-box button{ border:1px solid var(--border); background:transparent; padding: 8px 16px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; color: var(--text); }
+  .modal-box button.primary{ background: var(--accent); color:#000; border-color: var(--accent); }
+  .modal-box input[type=text]{ width:100%; background: var(--panel); border:1px solid var(--border); border-radius:6px; padding:9px 10px; font-size:13.5px; color:var(--text); outline:none; margin-top:6px; }
 </style>
 </head>
 <body>
 
 <div class="layout">
-  <div class="app">
-    <header class="page-head">
-      <h1>학습노트</h1>
-      <div class="head-right">
-        <span class="collections-toggle" id="collectionsToggle">모음집</span>
-        <div class="meta" id="dateLabel"></div>
-      </div>
-    </header>
+  <div class="sidebar">
+    <div class="brand"><span class="logo">S</span><span class="name">Spotify Lite</span></div>
 
-    <div class="entry-form">
-      <input id="wordInput" type="text" placeholder="오늘의 단어를 입력하세요" autocomplete="off" />
-      <button id="addBtn">추가</button>
-    </div>
-    <div class="search-hint" id="searchHint"></div>
-
-    <div class="results" id="results"></div>
-
-    <div class="list-head-row">
-      <span></span>
-      <span class="save-link" id="saveCollectionLink">현재 목록 저장</span>
-    </div>
-    <ul class="notes-list" id="notesList">
-      <li class="empty">아직 추가한 단어가 없습니다.</li>
-    </ul>
-
-    <div class="write-line-block">
-      <div class="write-line" id="writeLine">&nbsp;</div>
+    <div class="side-section">
+      <h3>내 재생목록</h3>
+      <div class="side-list" id="collectionsList"><div class="side-empty">저장된 목록이 없습니다.</div></div>
+      <button class="save-current-btn" id="saveCollectionLink">+ 현재 큐 저장</button>
     </div>
 
-    <div class="nav-row">
-      <button id="prevBtn">이전 문제</button>
-      <button id="playPauseBtn">이어보기</button>
-      <button id="nextBtn">다음 문제</button>
+    <div class="side-section">
+      <h3>계정 재생목록</h3>
+      <div class="side-list" id="accountPlaylistsList"><div class="side-empty">동기화가 필요합니다.</div></div>
     </div>
 
-    <div class="footer-note">학습노트 v1.0</div>
+    <div class="sync-status" id="syncStatus">
+      <span class="dot"></span>
+      <span class="label" id="syncLabel">연결 안 됨</span>
+    </div>
   </div>
 
-  <div class="side-panel" id="sidePanel">
-    <div class="side-panel-inner">
-      <h2>노트 모음집</h2>
-      <div id="collectionsList"><div class="empty-note">저장된 모음집이 없습니다.</div></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="search-row">
+        <input id="wordInput" type="text" placeholder="곡, 아티스트 검색" autocomplete="off" />
+        <button id="addBtn">검색</button>
+      </div>
+      <div class="search-hint" id="searchHint"></div>
+    </div>
 
-      <h2 style="margin-top:26px;">계정 재생목록</h2>
-      <div id="accountPlaylistsList"><div class="empty-note">불러오는 중...</div></div>
+    <div class="content">
+      <div id="resultsSection" style="display:none;">
+        <div class="section-title">검색 결과</div>
+        <div id="results"></div>
+      </div>
+
+      <div class="section-title">현재 재생목록</div>
+      <div id="notesList"><div class="queue-empty">큐가 비어 있습니다. 곡을 검색해서 추가해보세요.</div></div>
     </div>
   </div>
 </div>
 
-<div class="sync-dot" id="syncDot" title=""></div>
+<div class="player-bar">
+  <div class="now-playing">
+    <div class="art"></div>
+    <div class="meta">
+      <div class="tt" id="npTitle">재생 중인 곡 없음</div>
+      <div class="ar" id="npArtist">-</div>
+    </div>
+  </div>
+  <div class="player-center">
+    <div class="transport">
+      <button id="prevBtn">⏮</button>
+      <button id="playPauseBtn" class="play-btn">▶</button>
+      <button id="nextBtn">⏭</button>
+    </div>
+    <div class="seek-row">
+      <span id="curTime">0:00</span>
+      <input type="range" id="progressBar" min="0" max="1000" value="0" />
+      <span id="totalTime">0:00</span>
+    </div>
+  </div>
+  <div style="width:260px;"></div>
+</div>
+
 <div class="modal-overlay hidden" id="modalOverlay">
   <div class="modal-box">
-    <p id="modalText">동기화되지 않았습니다.</p>
-    <div class="status" id="modalStatus"></div>
+    <p id="modalText">Spotify 계정과 연결되지 않았습니다.</p>
     <div class="row">
       <button id="closeModalBtn">닫기</button>
-      <button id="syncBtn" class="primary">동기화 시작</button>
+      <button id="syncBtn" class="primary">Spotify로 로그인</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay hidden" id="saveModalOverlay">
   <div class="modal-box">
-    <p>모음집 이름을 입력하세요.</p>
-    <input type="text" id="saveNameInput" placeholder="예: 국어 단원1" />
+    <p>재생목록 이름을 입력하세요.</p>
+    <input type="text" id="saveNameInput" placeholder="예: 운동할 때" />
     <div class="row">
       <button id="cancelSaveBtn">취소</button>
       <button id="confirmSaveBtn" class="primary">저장</button>
@@ -202,15 +226,14 @@
   let localPosition = 0;
   let localDuration = 0;
 
-  const WRITE_TEXT = "오늘 배운 내용을 정리하면 다음과 같다 우선 핵심 개념을 이해하고 예제를 통해 확인한 뒤 요약 노트를 다시 한번 작성해 본다";
-
   const $ = (id) => document.getElementById(id);
 
-  (function setDate(){
-    const d = new Date();
-    const w = ['일','월','화','수','목','금','토'][d.getDay()];
-    $('dateLabel').textContent = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${w})`;
-  })();
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec||0));
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
 
   function consumeHash(){
     if(location.hash && location.hash.length > 1){
@@ -220,7 +243,7 @@
         const expIn = parseInt(params.get('exp') || '3600', 10);
         tokenExpiresAt = Date.now() + expIn * 1000;
         history.replaceState(null, '', location.pathname);
-        updateSyncDot(); initSpotifySdk(); scheduleRefresh();
+        updateSyncStatus(); initSpotifySdk(); scheduleRefresh(); fetchAccountPlaylists();
         return true;
       }
     }
@@ -237,14 +260,17 @@
       if(data && data.authenticated){
         accessToken = data.access_token;
         tokenExpiresAt = Date.now() + (data.expires_in || 3600) * 1000;
-        updateSyncDot(); initSpotifySdk(); scheduleRefresh();
+        updateSyncStatus(); initSpotifySdk(); scheduleRefresh(); fetchAccountPlaylists();
+      } else {
+        renderCollections();
       }
-    }catch(e){}
+    }catch(e){ renderCollections(); }
   }
 
-  function updateSyncDot(){
-    $('syncDot').classList.toggle('linked', !!accessToken);
-    $('modalText').textContent = accessToken ? '동기화되었습니다.' : '동기화되지 않았습니다.';
+  function updateSyncStatus(){
+    $('syncStatus').classList.toggle('linked', !!accessToken);
+    $('syncLabel').textContent = accessToken ? '연결됨' : '연결 안 됨';
+    $('modalText').textContent = accessToken ? 'Spotify 계정과 연결되어 있습니다.' : 'Spotify 계정과 연결되지 않았습니다.';
   }
 
   function scheduleRefresh(){
@@ -258,28 +284,29 @@
         accessToken = data.access_token;
         tokenExpiresAt = Date.now() + (data.expires_in || 3600) * 1000;
         scheduleRefresh();
-      } else { accessToken = null; updateSyncDot(); }
+      } else { accessToken = null; updateSyncStatus(); }
     }catch(e){}
   }
 
   if(!consumeHash()){ restoreSession(); }
+  renderCollections();
 
   window.onSpotifyWebPlaybackSDKReady = () => { sdkReady = true; if(accessToken) initSpotifySdk(); };
 
   function initSpotifySdk(){
     if(!sdkReady || player) return;
-    player = new Spotify.Player({ name: '학습노트', getOAuthToken: cb => cb(accessToken), volume: 0.8 });
+    player = new Spotify.Player({ name: 'Spotify Lite', getOAuthToken: cb => cb(accessToken), volume: 0.8 });
     player.addListener('ready', ({ device_id }) => { deviceId = device_id; });
     player.addListener('not_ready', () => { deviceId = null; });
     player.addListener('player_state_changed', (state) => {
       if(!state) return;
       localPaused = state.paused; localPosition = state.position; localDuration = state.duration;
-      $('playPauseBtn').textContent = localPaused ? '이어보기' : '잠시멈춤';
+      $('playPauseBtn').textContent = localPaused ? '▶' : '❚❚';
       if(!state.paused) startProgressTimer(); else stopProgressTimer();
-      renderWriteLine(localPosition, localDuration);
+      updateSeekUI(localPosition, localDuration);
     });
-    player.addListener('authentication_error', () => { accessToken=null; updateSyncDot(); });
-    player.addListener('account_error', () => { $('searchHint').textContent = 'Premium 계정이 필요합니다.'; });
+    player.addListener('authentication_error', () => { accessToken=null; updateSyncStatus(); });
+    player.addListener('account_error', () => { $('searchHint').textContent = 'Spotify Premium 계정이 필요합니다.'; });
     player.connect();
   }
 
@@ -288,43 +315,42 @@
     const startedAt = Date.now(); const basePos = localPosition;
     progressTimer = setInterval(() => {
       const cur = basePos + (Date.now() - startedAt);
-      renderWriteLine(cur, localDuration);
+      updateSeekUI(cur, localDuration);
       if(localDuration > 0 && cur >= localDuration - 300) goNext();
     }, 400);
   }
   function stopProgressTimer(){ if(progressTimer) clearInterval(progressTimer); }
 
-  function renderWriteLine(posMs, durMs){
-    const line = $('writeLine');
-    if(!durMs || durMs <= 0){ line.innerHTML = '&nbsp;'; return; }
-    const ratio = Math.min(1, Math.max(0, posMs / durMs));
-    const revealCount = Math.floor(WRITE_TEXT.length * ratio);
-    const shown = WRITE_TEXT.slice(0, revealCount);
-    const rest = WRITE_TEXT.slice(revealCount).replace(/[^\s]/g, '_');
-    line.innerHTML = `${escapeHtml(shown)}<span class="caret">|</span>${escapeHtml(rest)}`;
+  function updateSeekUI(posMs, durMs){
+    $('curTime').textContent = fmtTime(posMs/1000);
+    $('totalTime').textContent = fmtTime(durMs/1000);
+    $('progressBar').value = durMs > 0 ? Math.floor((posMs/durMs)*1000) : 0;
   }
 
-  $('writeLine').addEventListener('click', (e) => {
-    if(!player || localDuration <= 0) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    player.seek(ratio * localDuration);
+  let seeking = false;
+  $('progressBar').addEventListener('input', () => { seeking = true; });
+  $('progressBar').addEventListener('change', () => {
+    if(player && localDuration > 0){
+      const target = (parseInt($('progressBar').value,10)/1000) * localDuration;
+      player.seek(target);
+    }
+    seeking = false;
   });
 
   async function search(query){
-    const hint = $('searchHint'); $('results').innerHTML = '';
-    if(!accessToken){ hint.textContent = '검색을 사용하려면 동기화가 필요합니다 (우측 하단 점).'; return; }
-    hint.textContent = '찾는 중...';
+    const hint = $('searchHint'); $('results').innerHTML = ''; $('resultsSection').style.display = 'block';
+    if(!accessToken){ hint.textContent = '검색하려면 Spotify 로그인이 필요합니다.'; $('resultsSection').style.display='none'; return; }
+    hint.textContent = '검색 중...';
     try{
-      const res = await fetch(`https://api.spotify.com/v1/search?type=track&limit=6&q=${encodeURIComponent(query)}`, {
+      const res = await fetch(`https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(query)}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
-      if(res.status === 401){ hint.textContent = '다시 동기화해주세요.'; accessToken = null; updateSyncDot(); return; }
+      if(res.status === 401){ hint.textContent = '다시 로그인해주세요.'; accessToken = null; updateSyncStatus(); return; }
       const data = await res.json();
       const items = ((data.tracks && data.tracks.items) || []).map(t => ({
         uri: t.uri, title: t.name, artist: t.artists.map(a => a.name).join(', ')
       }));
-      hint.textContent = items.length ? '' : '결과가 없습니다.';
+      hint.textContent = items.length ? '' : '검색 결과가 없습니다.';
       renderResults(items);
     }catch(e){ hint.textContent = '네트워크 오류가 발생했습니다.'; }
   }
@@ -332,12 +358,12 @@
   function renderResults(items){
     const box = $('results'); box.innerHTML = '';
     items.forEach((item, i) => {
-      const row = document.createElement('div'); row.className = 'result-row';
-      row.innerHTML = `<span class="idx">${String(i+1).padStart(2,'0')}</span>
-        <span class="word">${escapeHtml(item.title)}</span>
-        <span class="meaning">${escapeHtml(item.artist)}</span>`;
+      const row = document.createElement('div'); row.className = 'track-row';
+      row.innerHTML = `<span class="idx">${i+1}</span>
+        <span class="titles"><span class="tt">${escapeHtml(item.title)}</span><span class="ar">${escapeHtml(item.artist)}</span></span>
+        <span class="action">추가</span>`;
       row.addEventListener('click', () => {
-        addToQueue(item); $('results').innerHTML = ''; $('wordInput').value = ''; $('searchHint').textContent = '';
+        addToQueue(item); $('wordInput').value = ''; $('searchHint').textContent = ''; $('resultsSection').style.display = 'none';
       });
       box.appendChild(row);
     });
@@ -348,36 +374,41 @@
   function addToQueue(item){ queue.push(item); renderQueue(); if(currentIndex === -1) playIndex(queue.length - 1); }
   function removeFromQueue(i){
     queue.splice(i,1);
-    if(currentIndex === i){ currentIndex = -1; if(player) player.pause(); $('playPauseBtn').textContent = '이어보기'; renderWriteLine(0,0); }
-    else if(currentIndex > i) currentIndex -= 1;
+    if(currentIndex === i){
+      currentIndex = -1; if(player) player.pause();
+      $('playPauseBtn').textContent = '▶'; $('npTitle').textContent = '재생 중인 곡 없음'; $('npArtist').textContent = '-';
+    } else if(currentIndex > i) currentIndex -= 1;
     renderQueue();
   }
   function renderQueue(){
     const list = $('notesList'); list.innerHTML = '';
-    if(queue.length === 0){ list.innerHTML = '<li class="empty">아직 추가한 단어가 없습니다.</li>'; return; }
+    if(queue.length === 0){ list.innerHTML = '<div class="queue-empty">큐가 비어 있습니다. 곡을 검색해서 추가해보세요.</div>'; return; }
     queue.forEach((item, i) => {
-      const li = document.createElement('li'); if(i === currentIndex) li.classList.add('active');
-      li.innerHTML = `<span class="bullet"></span>
-        <span class="word-col"><span class="w">${escapeHtml(item.title)}</span><span class="m">${escapeHtml(item.artist)}</span></span>
-        <span class="remove">지우기</span>`;
-      li.querySelector('.bullet').addEventListener('click', () => playIndex(i));
-      li.querySelector('.word-col').addEventListener('click', () => playIndex(i));
-      li.querySelector('.remove').addEventListener('click', (e) => { e.stopPropagation(); removeFromQueue(i); });
-      list.appendChild(li);
+      const row = document.createElement('div'); row.className = 'track-row'; if(i === currentIndex) row.classList.add('active');
+      row.innerHTML = `<span class="idx">${i === currentIndex ? '♪' : i+1}</span>
+        <span class="titles"><span class="tt">${escapeHtml(item.title)}</span><span class="ar">${escapeHtml(item.artist)}</span></span>
+        <span class="action" data-role="remove">삭제</span>`;
+      row.addEventListener('click', (e) => {
+        if(e.target.dataset.role === 'remove'){ e.stopPropagation(); removeFromQueue(i); return; }
+        playIndex(i);
+      });
+      list.appendChild(row);
     });
   }
 
   async function playIndex(i){
     if(i < 0 || i >= queue.length) return;
-    if(!deviceId){ $('searchHint').textContent = '준비 중입니다. 잠시 후 다시 시도해주세요.'; setTimeout(() => playIndex(i), 800); return; }
+    if(!deviceId){ $('searchHint').textContent = '재생 준비 중입니다...'; setTimeout(() => playIndex(i), 800); return; }
     currentIndex = i; renderQueue();
+    $('npTitle').textContent = queue[i].title;
+    $('npArtist').textContent = queue[i].artist;
     try{
       await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ uris: [queue[i].uri] })
       });
-    }catch(e){ $('searchHint').textContent = '요청에 실패했습니다.'; }
+    }catch(e){ $('searchHint').textContent = '재생 요청에 실패했습니다.'; }
   }
 
   function goNext(){ if(queue.length) playIndex((currentIndex + 1) % queue.length); }
@@ -392,11 +423,12 @@
   $('addBtn').addEventListener('click', () => { const v = $('wordInput').value.trim(); if(v) search(v); });
   $('wordInput').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ const v = $('wordInput').value.trim(); if(v) search(v); } });
 
-  $('syncDot').addEventListener('click', () => { updateSyncDot(); $('modalOverlay').classList.remove('hidden'); });
+  $('syncStatus').addEventListener('click', () => { updateSyncStatus(); $('modalOverlay').classList.remove('hidden'); });
   $('closeModalBtn').addEventListener('click', () => $('modalOverlay').classList.add('hidden'));
   $('syncBtn').addEventListener('click', () => { window.location.href = '/api/login'; });
 
-  const STORE_KEY = 'gvnotes_collections';
+  // ---------- 로컬 저장 재생목록 ----------
+  const STORE_KEY = 'spotifylite_collections';
   function loadCollections(){
     try{ return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }catch(e){ return []; }
   }
@@ -405,11 +437,11 @@
   function renderCollections(){
     const box = $('collectionsList');
     const list = loadCollections();
-    if(list.length === 0){ box.innerHTML = '<div class="empty-note">저장된 모음집이 없습니다.</div>'; return; }
+    if(list.length === 0){ box.innerHTML = '<div class="side-empty">저장된 목록이 없습니다.</div>'; return; }
     box.innerHTML = '';
     list.forEach((col, i) => {
-      const div = document.createElement('div'); div.className = 'collection-item';
-      div.innerHTML = `<span class="del">삭제</span><span class="name">${escapeHtml(col.name)}</span><span class="count">${col.items.length}개</span>`;
+      const div = document.createElement('div'); div.className = 'side-item';
+      div.innerHTML = `<span class="t">${escapeHtml(col.name)}</span><span class="n">${col.items.length}</span><span class="del">삭제</span>`;
       div.addEventListener('click', (e) => {
         if(e.target.classList.contains('del')){
           e.stopPropagation();
@@ -418,16 +450,31 @@
         }
         queue = col.items.slice(); currentIndex = -1; renderQueue();
         if(queue.length) playIndex(0);
-        $('sidePanel').classList.remove('open');
       });
       box.appendChild(div);
     });
   }
 
+  $('saveCollectionLink').addEventListener('click', () => {
+    if(queue.length === 0) return;
+    $('saveNameInput').value = '';
+    $('saveModalOverlay').classList.remove('hidden');
+  });
+  $('cancelSaveBtn').addEventListener('click', () => $('saveModalOverlay').classList.add('hidden'));
+  $('confirmSaveBtn').addEventListener('click', () => {
+    const name = $('saveNameInput').value.trim() || `재생목록 ${loadCollections().length + 1}`;
+    const list = loadCollections();
+    list.push({ name, items: queue.slice() });
+    saveCollections(list);
+    $('saveModalOverlay').classList.add('hidden');
+    renderCollections();
+  });
+
+  // ---------- 계정 재생목록 (Spotify Web API, Feb 2026 /items 스키마) ----------
   async function fetchAccountPlaylists(){
     const box = $('accountPlaylistsList');
-    if(!accessToken){ box.innerHTML = '<div class="empty-note">동기화가 필요합니다.</div>'; return; }
-    box.innerHTML = '<div class="empty-note">불러오는 중...</div>';
+    if(!accessToken){ box.innerHTML = '<div class="side-empty">동기화가 필요합니다.</div>'; return; }
+    box.innerHTML = '<div class="side-empty">불러오는 중...</div>';
     try{
       const res = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
         headers: { Authorization: `Bearer ${accessToken}` }
@@ -435,24 +482,24 @@
       const data = await res.json();
       if(!res.ok){
         if(res.status === 401 || res.status === 403){
-          box.innerHTML = '<div class="empty-note">권한이 부족합니다. 우측 하단 점 → 동기화 시작으로 다시 로그인해주세요.</div>';
+          box.innerHTML = '<div class="side-empty">권한 부족: 다시 로그인해주세요.</div>';
         } else {
-          box.innerHTML = `<div class="empty-note">불러오지 못했습니다 (${res.status}: ${escapeHtml((data && data.error && data.error.message) || '알 수 없는 오류')})</div>`;
+          box.innerHTML = `<div class="side-empty">불러오지 못함 (${res.status})</div>`;
         }
         return;
       }
-      const items = (data.items || []).filter(pl => pl); // null 항목 방어
-      if(items.length === 0){ box.innerHTML = '<div class="empty-note">계정에 재생목록이 없습니다.</div>'; return; }
+      const items = (data.items || []).filter(pl => pl);
+      if(items.length === 0){ box.innerHTML = '<div class="side-empty">재생목록이 없습니다.</div>'; return; }
       box.innerHTML = '';
       items.forEach((pl) => {
-        const div = document.createElement('div'); div.className = 'collection-item';
-        const total = (pl.items && typeof pl.items.total === 'number') ? `${pl.items.total}곡` : '';
-        div.innerHTML = `<span class="name">${escapeHtml(pl.name || '(제목없음)')}</span><span class="count">${total}</span>`;
+        const div = document.createElement('div'); div.className = 'side-item';
+        const total = (pl.items && typeof pl.items.total === 'number') ? pl.items.total : '';
+        div.innerHTML = `<span class="t">${escapeHtml(pl.name || '(제목없음)')}</span><span class="n">${total}</span>`;
         div.addEventListener('click', () => loadAccountPlaylist(pl.id));
         box.appendChild(div);
       });
     }catch(e){
-      box.innerHTML = `<div class="empty-note">불러오지 못했습니다: ${escapeHtml(String((e && e.message) || e))}</div>`;
+      box.innerHTML = `<div class="side-empty">불러오지 못함: ${escapeHtml(String((e && e.message) || e))}</div>`;
     }
   }
 
@@ -477,40 +524,18 @@
         url = data.next || null;
       }
       if(items.length === 0){
-        $('searchHint').textContent = '이 재생목록에서 재생 가능한 곡을 찾지 못했습니다 (로컬 파일이거나 비어있을 수 있음).';
+        $('searchHint').textContent = '이 재생목록에서 재생 가능한 곡을 찾지 못했습니다.';
         return;
       }
       queue = items; currentIndex = -1; renderQueue();
       $('searchHint').textContent = '';
       playIndex(0);
-      $('sidePanel').classList.remove('open');
     }catch(e){
       $('searchHint').textContent = `재생목록을 불러오지 못했습니다: ${(e && e.message) || e}`;
     }
   }
 
-  $('collectionsToggle').addEventListener('click', () => {
-    $('sidePanel').classList.toggle('open');
-    renderCollections();
-    fetchAccountPlaylists();
-  });
-
-  $('saveCollectionLink').addEventListener('click', () => {
-    if(queue.length === 0) return;
-    $('saveNameInput').value = '';
-    $('saveModalOverlay').classList.remove('hidden');
-  });
-  $('cancelSaveBtn').addEventListener('click', () => $('saveModalOverlay').classList.add('hidden'));
-  $('confirmSaveBtn').addEventListener('click', () => {
-    const name = $('saveNameInput').value.trim() || `모음집 ${loadCollections().length + 1}`;
-    const list = loadCollections();
-    list.push({ name, items: queue.slice() });
-    saveCollections(list);
-    $('saveModalOverlay').classList.add('hidden');
-  });
-
-  updateSyncDot();
-  renderWriteLine(0,0);
+  updateSyncStatus();
 })();
 </script>
 
